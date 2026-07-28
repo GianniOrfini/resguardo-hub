@@ -9,24 +9,36 @@ import {
   Copy, 
   Eye, 
   Check, 
-  Star, 
   Bot, 
   X, 
   FileText, 
-  Maximize2,
   Trash2,
-  Zap
+  Zap,
+  Tag,
+  AlignLeft
 } from 'lucide-react';
 
 export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) {
+  // Live queries for templates and custom categories
   const templates = useLiveQuery(() => db.templates.toArray(), []) || [];
+  const dbCategories = useLiveQuery(() => db.categories.toArray(), []) || [];
+
+  // Extract all unique category names
+  const categoryNames = ['Todas', ...Array.from(new Set([
+    ...dbCategories.map(c => c.name),
+    ...templates.map(t => t.category).filter(Boolean)
+  ]))];
 
   const [selectedCategory, setSelectedCategory] = useState('Todas');
   const [searchQuery, setSearchQuery] = useState('');
-  const [cardZoomSize, setCardZoomSize] = useState(300); // Zoom slider size in px
+  const [cardZoomSize, setCardZoomSize] = useState(300); // Slider size in px
   const [activeModalTemplate, setActiveModalTemplate] = useState(null);
-  const [modalTab, setModalTab] = useState('preview'); // 'preview' | 'code'
+  const [modalTab, setModalTab] = useState('preview');
   const [copiedId, setCopiedId] = useState(null);
+
+  // New Category inline modal/input
+  const [showAddCatModal, setShowAddCatModal] = useState(false);
+  const [newCatName, setNewCatName] = useState('');
 
   // New Template Modal state
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -34,9 +46,8 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
   const [newTmplCategory, setNewTmplCategory] = useState('Cold Outreach');
   const [newTmplAudience, setNewTmplAudience] = useState('');
   const [newTmplSubject, setNewTmplSubject] = useState('');
+  const [newTmplDescription, setNewTmplDescription] = useState('');
   const [newTmplBody, setNewTmplBody] = useState('');
-
-  const categories = ['Todas', 'Cold Outreach', 'Lead Gen', 'Onboarding', 'Nurturing', 'Promocional'];
 
   // Filter templates
   const filteredTemplates = templates.filter(tmpl => {
@@ -44,6 +55,7 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
     const matchesSearch = searchQuery === '' || 
       tmpl.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (tmpl.subject && tmpl.subject.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (tmpl.description && tmpl.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (tmpl.targetAudience && tmpl.targetAudience.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesCat && matchesSearch;
   });
@@ -60,11 +72,10 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
       name: `${tmpl.name} (Variante IA)`,
       category: tmpl.category,
       targetAudience: tmpl.targetAudience,
-      description: `Variante generada a partir de ${tmpl.name}`,
+      description: tmpl.description ? `Variante: ${tmpl.description}` : `Variante generada a partir de ${tmpl.name}`,
       subject: tmpl.subject,
       preheader: tmpl.preheader,
       htmlBody: tmpl.htmlBody,
-      rating: 4.8,
       isAiGenerated: true,
       createdAt: new Date().toISOString().slice(0, 10)
     };
@@ -79,6 +90,20 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
     onNotification('Plantilla eliminada.');
   };
 
+  const handleAddCategorySubmit = async (e) => {
+    e.preventDefault();
+    if (!newCatName.trim()) return;
+
+    if (!categoryNames.includes(newCatName.trim())) {
+      await db.categories.add({ name: newCatName.trim() });
+      setSelectedCategory(newCatName.trim());
+      onNotification(`Nueva categoría "${newCatName.trim()}" agregada.`);
+    }
+
+    setNewCatName('');
+    setShowAddCatModal(false);
+  };
+
   const handleCreateTemplateSubmit = async (e) => {
     e.preventDefault();
     if (!newTmplName.trim()) return;
@@ -87,11 +112,10 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
       name: newTmplName,
       category: newTmplCategory,
       targetAudience: newTmplAudience || 'General Resguardo',
-      description: 'Plantilla agregada manualmente por el usuario.',
+      description: newTmplDescription || 'Sin descripción.',
       subject: newTmplSubject,
-      preheader: 'Pre-encabezado estándar...',
-      htmlBody: newTmplBody || `<div><h2>${newTmplName}</h2><p>Contenido inicial...</p></div>`,
-      rating: 5.0,
+      preheader: 'Vista previa en bandeja...',
+      htmlBody: newTmplBody || `<div style="font-family: Arial, sans-serif; padding: 20px; color: #111827;"><h2>${newTmplName}</h2><p>${newTmplDescription}</p></div>`,
       isAiGenerated: true,
       createdAt: new Date().toISOString().slice(0, 10)
     });
@@ -99,6 +123,7 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
     setShowCreateModal(false);
     setNewTmplName('');
     setNewTmplSubject('');
+    setNewTmplDescription('');
     setNewTmplBody('');
     onNotification('Nueva plantilla registrada en la base de datos.');
   };
@@ -107,9 +132,9 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
     <div className="macos-gallery-container">
       {/* Dynamic MacOS Photo Gallery Toolbar */}
       <div className="macos-toolbar">
-        {/* Left: Category Pills */}
+        {/* Left: Dynamic Category Pills */}
         <div className="macos-pill-filters">
-          {categories.map(cat => (
+          {categoryNames.map(cat => (
             <button
               key={cat}
               className={`pill-btn ${selectedCategory === cat ? 'active' : ''}`}
@@ -118,14 +143,23 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
               {cat}
             </button>
           ))}
+
+          <button
+            className="pill-btn"
+            style={{ borderStyle: 'dashed', color: 'var(--accent-blue)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+            onClick={() => setShowAddCatModal(true)}
+            title="Crear nueva categoría"
+          >
+            <Plus size={13} /> Categoría
+          </button>
         </div>
 
         {/* Middle: Search Bar */}
-        <div style={{ position: 'relative', width: '260px' }}>
+        <div style={{ position: 'relative', width: '240px' }}>
           <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
           <input
             type="text"
-            placeholder="Buscar plantilla IA..."
+            placeholder="Buscar plantilla o descripción..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             style={{
@@ -140,20 +174,20 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
           />
         </div>
 
-        {/* Right: MacOS Zoom Control Slider & Add button */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        {/* Right: Zoom Slider & Create Template */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <div className="macos-zoom-control">
             <Sliders size={14} />
-            <span>Tamaño:</span>
+            <span>Escala:</span>
             <input
               type="range"
-              min="220"
+              min="240"
               max="420"
               step="10"
               value={cardZoomSize}
               onChange={e => setCardZoomSize(Number(e.target.value))}
               className="macos-zoom-slider"
-              title="Ajustar tamaño de miniaturas (MacOS Style)"
+              title="Ajustar ancho de tarjetas"
             />
           </div>
 
@@ -163,17 +197,17 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
         </div>
       </div>
 
-      {/* Grid Status Header */}
+      {/* Gallery Count Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 4px', fontSize: '13px', color: 'var(--text-muted)' }}>
         <div>
-          Mostrando <strong>{filteredTemplates.length}</strong> plantillas cargadas de IA
+          Mostrando <strong>{filteredTemplates.length}</strong> plantillas visuales de email
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--accent-purple)', fontWeight: '600' }}>
-          <Bot size={15} /> Creadas por la IA del técnico anterior
+          <Bot size={15} /> Plantillas IA Creadas
         </div>
       </div>
 
-      {/* Dynamic Grid of Template Cards (MacOS Photos Gallery) */}
+      {/* Dynamic Grid of Vertical Email Cards */}
       <div
         className="template-grid"
         style={{
@@ -186,49 +220,59 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
             className="template-card"
             onClick={() => setActiveModalTemplate(tmpl)}
           >
-            {/* Visual Mini-Mockup Render Header */}
+            {/* Taller Vertical Email Browser Render Frame */}
             <div className="template-preview-frame">
-              <div className="template-preview-mockup">
-                <div style={{ fontWeight: '800', borderBottom: '1px solid #e2e8f0', paddingBottom: '4px', marginBottom: '6px', color: '#0f172a' }}>
-                  {tmpl.subject || tmpl.name}
-                </div>
-                <div 
-                  style={{ opacity: 0.8 }}
-                  dangerouslySetInnerHTML={{ __html: tmpl.htmlBody ? tmpl.htmlBody.slice(0, 140) + '...' : '' }}
+              <div className="email-browser-bar">
+                <span className="dot red"></span>
+                <span className="dot yellow"></span>
+                <span className="dot green"></span>
+                <span className="email-subject-header">{tmpl.subject || tmpl.name}</span>
+              </div>
+              <div className="email-iframe-wrapper">
+                <iframe
+                  srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"/><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;margin:0;padding:12px;background:#ffffff;box-sizing:border-box;} img{max-width:100%;}</style></head><body>${tmpl.htmlBody || ''}</body></html>`}
+                  title={tmpl.name}
+                  className="email-mini-iframe"
                 />
               </div>
             </div>
 
-            {/* Card Info */}
+            {/* Card Body */}
             <div className="template-card-body">
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span className="badge badge-purple" style={{ fontSize: '10px' }}>
                   <Bot size={11} /> Plantilla IA
                 </span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', color: '#f59e0b', fontWeight: '700' }}>
-                  <Star size={12} fill="#f59e0b" /> {tmpl.rating || 4.9}
-                </div>
+                <span className="badge badge-gray" style={{ fontSize: '10px' }}>
+                  {tmpl.category}
+                </span>
               </div>
 
               <div className="template-card-title">{tmpl.name}</div>
-              <div className="template-card-desc">{tmpl.description || tmpl.targetAudience}</div>
+              
+              {/* User Description */}
+              {tmpl.description && (
+                <div className="template-card-desc">
+                  {tmpl.description}
+                </div>
+              )}
 
               <div className="template-card-footer">
-                <span style={{ color: 'var(--text-muted)' }}>{tmpl.category}</span>
-                <span style={{ fontWeight: '600', color: 'var(--accent-blue)' }}>Ver Detalle &rarr;</span>
+                <span style={{ color: 'var(--text-muted)' }}>{tmpl.targetAudience}</span>
+                <span style={{ fontWeight: '700', color: 'var(--accent-blue)' }}>Ver Completo &rarr;</span>
               </div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Modal 1: Lightbox Preview & Editor Modal (MacOS Style) */}
+      {/* Modal 1: Lightbox Preview & Details Modal */}
       {activeModalTemplate && (
         <div className="modal-overlay" onClick={() => setActiveModalTemplate(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ width: '32px', height: '32px', background: '#f3e8ff', color: '#8b5cf6', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: '34px', height: '34px', background: '#f3e8ff', color: '#8b5cf6', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Sparkles size={18} />
                 </div>
                 <div>
@@ -236,7 +280,7 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
                     {activeModalTemplate.name}
                   </h3>
                   <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                    Audiencia: {activeModalTemplate.targetAudience} • Categoría: {activeModalTemplate.category}
+                    Categoría: {activeModalTemplate.category} • Audiencia: {activeModalTemplate.targetAudience}
                   </p>
                 </div>
               </div>
@@ -250,20 +294,27 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
             </div>
 
             <div className="modal-body">
+              {/* Description Callout */}
+              {activeModalTemplate.description && (
+                <div style={{ background: '#f8fafc', borderLeft: '4px solid var(--accent-purple)', padding: '12px 16px', borderRadius: '0 8px 8px 0', marginBottom: '16px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                  <strong style={{ color: 'var(--text-primary)' }}>Descripción / Notas:</strong> {activeModalTemplate.description}
+                </div>
+              )}
+
               {/* Modal Top Toolbar */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', background: '#f8fafc', padding: '10px 16px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', background: '#ffffff', padding: '10px 16px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button
                     className={`btn btn-sm ${modalTab === 'preview' ? 'btn-primary' : 'btn-secondary'}`}
                     onClick={() => setModalTab('preview')}
                   >
-                    <Eye size={14} /> Rendered Email
+                    <Eye size={14} /> Rendered HTML
                   </button>
                   <button
                     className={`btn btn-sm ${modalTab === 'code' ? 'btn-primary' : 'btn-secondary'}`}
                     onClick={() => setModalTab('code')}
                   >
-                    <FileText size={14} /> Código HTML
+                    <FileText size={14} /> Código Fuente
                   </button>
                 </div>
 
@@ -295,19 +346,16 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
                 </div>
               </div>
 
-              {/* Subject & Preheader Bar */}
+              {/* Subject Bar */}
               <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: '1px solid var(--border-color)', marginBottom: '16px' }}>
                 <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>
                   <strong>Asunto:</strong> {activeModalTemplate.subject}
-                </div>
-                <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                  <strong>Pre-header:</strong> {activeModalTemplate.preheader}
                 </div>
               </div>
 
               {/* Main Content Pane */}
               {modalTab === 'preview' ? (
-                <div style={{ background: '#ffffff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '24px', minHeight: '320px' }}>
+                <div style={{ background: '#ffffff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '24px', minHeight: '360px' }}>
                   <div dangerouslySetInnerHTML={{ __html: activeModalTemplate.htmlBody }} />
                 </div>
               ) : (
@@ -316,7 +364,7 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
                   value={activeModalTemplate.htmlBody}
                   style={{
                     width: '100%',
-                    height: '320px',
+                    height: '360px',
                     padding: '16px',
                     borderRadius: '10px',
                     fontFamily: 'monospace',
@@ -346,10 +394,43 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
         </div>
       )}
 
-      {/* Modal 2: Create New Template */}
+      {/* Modal 2: Create Custom Category */}
+      {showAddCatModal && (
+        <div className="modal-overlay" onClick={() => setShowAddCatModal(false)}>
+          <div className="modal-content" style={{ maxWidth: '420px' }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '15px', fontWeight: '700' }}>
+                Crear Nueva Categoría
+              </h3>
+              <button onClick={() => setShowAddCatModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                <X size={16} />
+              </button>
+            </div>
+            <form onSubmit={handleAddCategorySubmit}>
+              <div className="modal-body">
+                <label style={{ fontSize: '12px', fontWeight: '700' }}>Nombre de la Categoría</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ej: Webinars, Re-engagement, Black Friday..."
+                  value={newCatName}
+                  onChange={e => setNewCatName(e.target.value)}
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '13px', marginTop: '6px' }}
+                />
+              </div>
+              <div style={{ padding: '14px 20px', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                <button type="button" className="btn btn-secondary btn-sm" onClick={() => setShowAddCatModal(false)}>Cancelar</button>
+                <button type="submit" className="btn btn-primary btn-sm">Guardar Categoría</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 3: Create New Template */}
       {showCreateModal && (
         <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
-          <div className="modal-content" style={{ maxWidth: '600px' }} onClick={e => e.stopPropagation()}>
+          <div className="modal-content" style={{ maxWidth: '650px' }} onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '16px', fontWeight: '700' }}>
                 Añadir Nueva Plantilla de Email
@@ -381,11 +462,9 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
                       onChange={e => setNewTmplCategory(e.target.value)}
                       style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '13px', marginTop: '4px' }}
                     >
-                      <option>Cold Outreach</option>
-                      <option>Lead Gen</option>
-                      <option>Onboarding</option>
-                      <option>Nurturing</option>
-                      <option>Promocional</option>
+                      {categoryNames.filter(c => c !== 'Todas').map(c => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
                     </select>
                   </div>
 
@@ -399,6 +478,17 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
                       style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '13px', marginTop: '4px' }}
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: '700' }}>Descripción Personalizada (Notas / Uso)</label>
+                  <textarea
+                    rows={2}
+                    placeholder="Escribe una breve descripción de para qué sirve esta plantilla..."
+                    value={newTmplDescription}
+                    onChange={e => setNewTmplDescription(e.target.value)}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '12.5px', marginTop: '4px' }}
+                  />
                 </div>
 
                 <div>
