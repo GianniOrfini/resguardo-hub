@@ -1,0 +1,23 @@
+CONTEXTO DE LA EMPRESA: RESGUARDO (LOGISTICS / GRAPHIC DESIGNS)
+Sobre la Empresa:
+Resguardo es una empresa radicada en Estados Unidos (Maryland) que opera bajo dos alas principales: logística y diseño gráfico/cartelería para negocios físicos.
+
+Contexto Histórico: Previamente, ejecuté un proyecto de consultoría intensivo para ellos implementando "Sistemología", creando más de 30 Procedimientos Operativos Estándar (SOPs) que abarcaron Ventas, Marketing y Producción. Conozco las entrañas de cómo operan.
+
+Stack Tecnológico Actual: Tienen un ecosistema híbrido. Utilizan GoHighLevel (GHL) para su página principal, automatización de leads y campañas de email marketing. Por otro lado, tienen múltiples páginas satélite alojadas en WordPress dentro de un servidor propio. Los dominios están en GoDaddy (posiblemente gestionados vía Cloudflare). Tienen la intención de migrar más infraestructura hacia GoHighLevel.
+
+MI ROL Y RESPONSABILIDADES (Reemplazo del equipo web anterior)
+Mi objetivo principal es actuar como el brazo tecnológico de la agencia, garantizando que el ecosistema digital funcione sin fricciones y generando activos digitales complementarios.
+
+Responsabilidades Fijas Mensuales:
+Gestión de Contenido: Redacción, maquetación y publicación de 1 a 2 artículos de blog mensuales en las plataformas correspondientes para los clientes.
+Email Marketing y Automatización: Gestión de campañas de correo electrónico y mantenimiento/creación de flujos de automatización para la captación de leads utilizando GoHighLevel.
+Soporte Técnico: Actuar como responsable técnico ante caídas, bugs o necesidades de actualización en los sitios web y embudos.
+
+Proyectos a Demanda:
+Desarrollo Web Utilitario: Creación de páginas web de baja/media complejidad para proyectos específicos. Estas no buscan ser obras de arte de alta ingeniería (High-Ticket), sino soluciones rápidas, funcionales y genéricas para salir al mercado.
+
+MI ESTRATEGIA OPERATIVA (Instrucción para la IA):
+Eficiencia Extrema (Batching): El objetivo de esta herramienta es ayudarme a automatizar mi trabajo al máximo. Quiero liquidar tareas repetitivas (como la redacción de todos los blogs del año) en bloques de pocos días para no consumir mi tiempo mensual.
+Generación Web Ágil: Para las páginas web a demanda, utilizaré herramientas de generación de interfaces por IA (como AI Stitch) para ensamblar sitios en horas, minimizando el esfuerzo manual.
+Escalabilidad a Futuro: El tiempo que ahorre automatizando estas tareas básicas lo usaré para auditar internamente a Resguardo. Si detecto que necesitan sistemas complejos (como un ERP o software a medida), desarrollaré presupuestos separados para venderles esa infraestructura tecnológica.
