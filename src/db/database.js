@@ -1,4 +1,5 @@
 import Dexie from 'dexie';
+import initialBackupData from './backup_data.json';
 
 export const db = new Dexie('ResguardoHubDB');
 
@@ -12,173 +13,29 @@ db.version(2).stores({
   webPresets: '++id, name, type, createdAt'
 });
 
-// Populate seed data on first run or schema change
+// Populate seed data on first run from backup_data.json
 db.on('populate', async () => {
-  console.log('Seeding database version 2...');
+  console.log('Populating IndexedDB from backup_data.json...');
 
-  // Default Categories
-  await db.categories.bulkAdd([
-    { name: 'Cold Outreach' },
-    { name: 'Lead Gen' },
-    { name: 'Onboarding' },
-    { name: 'Nurturing' },
-    { name: 'Promocional' }
-  ]);
+  if (initialBackupData.categories?.length) {
+    await db.categories.bulkAdd(initialBackupData.categories);
+  }
 
-  // Initial AI Templates with rich HTML visual designs and user descriptions
-  await db.templates.bulkAdd([
-    {
-      name: 'B2B Logistics Pitch - Cold Outreach',
-      category: 'Cold Outreach',
-      targetAudience: 'Directores de Logística / Freight Managers',
-      description: 'Plantilla de prospección directa B2B enfocada en empresas de distribución en Maryland.',
-      subject: 'Optimizando la logística de distribución en Maryland | Resguardo',
-      preheader: 'Reduce tiempos de entrega y costos operativos con infraestructura dedicada.',
-      htmlBody: `
-<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
-  <div style="background: #111827; padding: 24px; text-align: center; color: #ffffff;">
-    <h1 style="margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.5px;">RESGUARDO LOGISTICS</h1>
-    <p style="margin: 4px 0 0; font-size: 12px; color: #9ca3af;">Soluciones de Distribución & Flotas Dedicadas en Maryland</p>
-  </div>
-  <div style="padding: 24px; color: #1f2937; line-height: 1.6;">
-    <h2 style="color: #111827; font-size: 18px; font-weight: 700; margin-top: 0;">Potencia la Logística de tu Empresa</h2>
-    <p>Hola <strong>{{first_name}}</strong>,</p>
-    <p>Sabemos que la eficiencia en la cadena de distribución en Maryland es crítica para mantener la competitividad de tu negocio.</p>
-    <div style="background-color: #f8fafc; border-left: 4px solid #2563eb; padding: 16px; margin: 20px 0; border-radius: 0 8px 8px 0;">
-      <p style="margin: 0; font-weight: 600; color: #1e3a8a;">En Resguardo ofrecemos solución integral de almacenamiento, gestión de flota y transporte bajo un mismo estándar de calidad.</p>
-    </div>
-    <p>¿Te interesaría agendar una breve llamada de 10 minutos esta semana para auditar tus costos logísticos actuales?</p>
-    <div style="text-align: center; margin: 28px 0 16px;">
-      <a href="{{booking_link}}" style="background-color: #111827; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 700; display: inline-block; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">Agendar Auditoría Gratuita &rarr;</a>
-    </div>
-  </div>
-  <div style="background: #f1f5f9; padding: 16px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0;">
-    Resguardo Logistics & Graphic Designs • Maryland, US
-  </div>
-</div>
-      `.trim(),
-      isAiGenerated: true,
-      createdAt: '2026-07-01'
-    },
-    {
-      name: 'Cartelería Comercial & Signage - Lead Magnet',
-      category: 'Lead Gen',
-      targetAudience: 'Dueños de Negocios Físicos / Retail Stores',
-      description: 'Oferta de maquetas 3D sin costo para aumentar respuesta en letreros comerciales y fachadas.',
-      subject: 'Renueva la fachada de tu local comercial antes del próximo trimestre',
-      preheader: 'Impacta a tus clientes desde el primer segundo con rótulos de alto rendimiento.',
-      htmlBody: `
-<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
-  <div style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 28px; text-align: center; color: #ffffff;">
-    <h1 style="margin: 0; font-size: 24px; font-weight: 800;">RESGUARDO GRAPHICS</h1>
-    <p style="margin: 6px 0 0; font-size: 13px; opacity: 0.9;">Especialistas en Cartelería LED & Fachadas Comerciales</p>
-  </div>
-  <div style="padding: 24px; color: #334155;">
-    <h2 style="color: #0f172a; font-size: 19px; font-weight: 700;">Haz que tu Negocio Destaque en la Ciudad</h2>
-    <p>Hola <strong>{{first_name}}</strong>,</p>
-    <p>El 70% de las ventas en tiendas físicas dependen del impacto visual de su fachada y señalética exterior.</p>
-    <div style="background: #eff6ff; padding: 16px; border-radius: 8px; margin: 16px 0;">
-      <ul style="margin: 0; padding-left: 20px; color: #1e40af;">
-        <li style="margin-bottom: 6px;">Letreros luminosos LED y cajas de luz 3D</li>
-        <li style="margin-bottom: 6px;">Vinilos para escaparates y flotas corporativas</li>
-        <li>Cartelería de gran formato e interiorismo</li>
-      </ul>
-    </div>
-    <p>Responde a este correo con las medidas aproximadas de tu local y te enviaremos una <strong>maqueta 3D totalmente gratis</strong>.</p>
-    <div style="text-align: center; margin-top: 24px;">
-      <a href="{{portfolio_link}}" style="background-color: #2563eb; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 700; display: inline-block;">Ver Portafolio de Proyectos</a>
-    </div>
-  </div>
-</div>
-      `.trim(),
-      isAiGenerated: true,
-      createdAt: '2026-07-10'
-    },
-    {
-      name: 'Onboarding Cliente Nuevo - Bienvenida GHL',
-      category: 'Onboarding',
-      targetAudience: 'Clientes Registrados en GoHighLevel',
-      description: 'Secuencia automatizada de bienvenida con accesos al portal de cliente.',
-      subject: '¡Bienvenido a Resguardo! Tu portal de servicios está listo',
-      preheader: 'Accede a tus recursos, seguimiento de órdenes y archivos de diseño.',
-      htmlBody: `
-<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 12px; overflow: hidden;">
-  <div style="background: #10b981; padding: 24px; text-align: center; color: #ffffff;">
-    <h1 style="margin: 0; font-size: 22px;">¡Bienvenido a Bord!</h1>
-    <p style="margin-top: 4px; font-size: 13px;">Resguardo Operations Center</p>
-  </div>
-  <div style="padding: 24px;">
-    <h2>¡Es un gusto tenerte con nosotros!</h2>
-    <p>Estimado/a <strong>{{first_name}}</strong>,</p>
-    <p>Queremos darte la bienvenida oficial a <strong>Resguardo</strong>. Tu cuenta ha sido activada en nuestro portal técnico.</p>
-    <div style="text-align: center; margin: 24px 0;">
-      <a href="{{portal_link}}" style="background-color: #111827; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 700; display: inline-block;">Acceder al Portal del Cliente</a>
-    </div>
-  </div>
-</div>
-      `.trim(),
-      isAiGenerated: true,
-      createdAt: '2026-07-15'
-    },
-    {
-      name: 'Promoción Flash - Descuento en Cartelería LED',
-      category: 'Promocional',
-      targetAudience: 'Clientes Frecuentes / Leads Calientes',
-      description: 'Campaña con banner promocional rojo de urgencia para cierre de ventas.',
-      subject: '⚡ 15% OFF en Cartelería Corporativa - Solo esta semana',
-      preheader: 'Renueva tu señalética comercial con precio preferencial de temporada.',
-      htmlBody: `
-<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 2px solid #ef4444; border-radius: 12px; overflow: hidden;">
-  <div style="background: #ef4444; padding: 24px; text-align: center; color: #ffffff;">
-    <h1 style="margin: 0; font-size: 26px; font-weight: 800;">OFERTA FLASH Q3</h1>
-    <p style="margin: 4px 0 0; font-size: 14px; font-weight: 600;">15% OFF EN IMPRESIÓN & CARTELERÍA</p>
-  </div>
-  <div style="padding: 24px; text-align: center; color: #1e293b;">
-    <h2 style="color: #dc2626;">Descuento Directo de Temporada</h2>
-    <p>Aprovecha un <strong>15% de descuento</strong> en cualquier proyecto de letreros LED o vinilos procesado antes del viernes.</p>
-    <div style="margin: 24px 0;">
-      <a href="{{promo_claim}}" style="background-color: #dc2626; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 800; display: inline-block;">Reclamar Descuento Ahora &rarr;</a>
-    </div>
-  </div>
-</div>
-      `.trim(),
-      isAiGenerated: true,
-      createdAt: '2026-07-22'
-    }
-  ]);
+  if (initialBackupData.templates?.length) {
+    await db.templates.bulkAdd(initialBackupData.templates);
+  }
 
-  // Scheduled Emails & Tasks
-  await db.scheduledEmails.bulkAdd([
-    {
-      subject: 'Boletín Agosto: 5 Tendencias de Cartelería Comercial para 2026',
-      scheduledDate: '2026-08-05T10:00',
-      status: 'Programado',
-      category: 'Nurturing',
-      segment: 'Base General (GoHighLevel)',
-      content: 'Este email presentará el artículo de blog del mes sobre cartelería en Maryland.',
-      templateId: 4
-    },
-    {
-      subject: 'Campaña B2B Maryland: Servicios de Logística Dedicada Q3',
-      scheduledDate: '2026-08-12T09:30',
-      status: 'Programado',
-      category: 'Cold Outreach',
-      segment: 'Prospectos B2B Maryland',
-      content: 'Pitch inicial para gerentes de logística y empresas de distribución.',
-      templateId: 1
-    }
-  ]);
+  if (initialBackupData.scheduledEmails?.length) {
+    await db.scheduledEmails.bulkAdd(initialBackupData.scheduledEmails);
+  }
 
-  await db.tasks.bulkAdd([
-    {
-      title: 'Redacción y Maquetación: Artículo de Blog 1 (Agosto)',
-      category: 'Gestión de Contenido',
-      status: 'Pendiente',
-      dueDate: '2026-08-08',
-      priority: 'Alta',
-      description: 'Escribir artículo enfocado en tendencias de cartelería e instalar en WordPress / GHL.'
-    }
-  ]);
+  if (initialBackupData.emailHistory?.length) {
+    await db.emailHistory.bulkAdd(initialBackupData.emailHistory);
+  }
 
-  console.log('Database populated successfully for schema v2!');
+  if (initialBackupData.tasks?.length) {
+    await db.tasks.bulkAdd(initialBackupData.tasks);
+  }
+
+  console.log('Database successfully populated from repository seed!');
 });
