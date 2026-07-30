@@ -18,3 +18,4 @@ dist-ssr/
 *.sw?
 .vscode/
 .idea/
+.vercel
