@@ -31,7 +31,7 @@ db.on('populate', async () => {
   if (initialBackupData.tasks?.length) await db.tasks.bulkAdd(initialBackupData.tasks);
 });
 
-// Helper function to safely merge August 2026 email history into IndexedDB without touching existing templates or tasks
+// Helper function to safely merge August 2026 email history into IndexedDB and clean up fake metrics
 export async function syncAugustEmailHistory() {
   try {
     const existingHistory = await db.emailHistory.toArray();
@@ -42,6 +42,13 @@ export async function syncAugustEmailHistory() {
     if (newEntries.length > 0) {
       await db.emailHistory.bulkAdd(newEntries);
       console.log(`Successfully synced ${newEntries.length} new August email history items.`);
+    }
+
+    // Update any existing items that don't have addedAt
+    for (const item of existingHistory) {
+      if (!item.addedAt) {
+        await db.emailHistory.update(item.id, { addedAt: '2026-08-02', openRate: null, clickRate: null });
+      }
     }
   } catch (err) {
     console.error('Error syncing August email history:', err);
