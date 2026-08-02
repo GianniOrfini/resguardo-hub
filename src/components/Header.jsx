@@ -1,8 +1,10 @@
-import React from 'react';
-import { Download, Upload, Plus, Search, ShieldCheck } from 'lucide-react';
+import React, { useRef } from 'react';
+import { Download, Upload, Plus, ShieldCheck } from 'lucide-react';
 import { db } from '../db/database';
 
 export default function Header({ activeTab, onOpenNewModal, onNotification }) {
+  const fileInputRef = useRef(null);
+
   const getTabInfo = () => {
     switch (activeTab) {
       case 'tasks': return { title: 'Centralizador de Tareas & Operaciones', subtitle: 'Optimización de flujo de trabajo mensual en bloque para Resguardo' };
@@ -21,13 +23,15 @@ export default function Header({ activeTab, onOpenNewModal, onNotification }) {
   const handleExportDB = async () => {
     try {
       const templates = await db.templates.toArray();
+      const categories = await db.categories.toArray();
       const scheduledEmails = await db.scheduledEmails.toArray();
       const emailHistory = await db.emailHistory.toArray();
       const tasks = await db.tasks.toArray();
 
       const exportData = {
-        version: 1,
+        version: 2,
         exportedAt: new Date().toISOString(),
+        categories,
         templates,
         scheduledEmails,
         emailHistory,
@@ -49,6 +53,57 @@ export default function Header({ activeTab, onOpenNewModal, onNotification }) {
     }
   };
 
+  // Import DB backup from JSON file
+  const handleImportFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const data = JSON.parse(event.target.result);
+        
+        let importedTemplatesCount = 0;
+        let importedTasksCount = 0;
+
+        if (Array.isArray(data.templates) && data.templates.length > 0) {
+          // Remove primary keys if auto-incrementing conflicts
+          const cleanTemplates = data.templates.map(({ id, ...rest }) => rest);
+          await db.templates.bulkAdd(cleanTemplates);
+          importedTemplatesCount = cleanTemplates.length;
+        }
+
+        if (Array.isArray(data.categories) && data.categories.length > 0) {
+          const cleanCategories = data.categories.map(({ id, ...rest }) => rest);
+          await db.categories.bulkAdd(cleanCategories);
+        }
+
+        if (Array.isArray(data.scheduledEmails) && data.scheduledEmails.length > 0) {
+          const cleanEmails = data.scheduledEmails.map(({ id, ...rest }) => rest);
+          await db.scheduledEmails.bulkAdd(cleanEmails);
+        }
+
+        if (Array.isArray(data.emailHistory) && data.emailHistory.length > 0) {
+          const cleanHistory = data.emailHistory.map(({ id, ...rest }) => rest);
+          await db.emailHistory.bulkAdd(cleanHistory);
+        }
+
+        if (Array.isArray(data.tasks) && data.tasks.length > 0) {
+          const cleanTasks = data.tasks.map(({ id, ...rest }) => rest);
+          await db.tasks.bulkAdd(cleanTasks);
+          importedTasksCount = cleanTasks.length;
+        }
+
+        onNotification(`Importación completada: ${importedTemplatesCount} plantillas y datos cargados.`);
+      } catch (err) {
+        console.error(err);
+        onNotification('Error al procesar el archivo JSON de importación.');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = ''; // reset file input
+  };
+
   return (
     <header className="top-header">
       <div className="header-title-group">
@@ -61,7 +116,28 @@ export default function Header({ activeTab, onOpenNewModal, onNotification }) {
           <ShieldCheck size={14} /> Local IndexedDB (No Supabase)
         </div>
 
-        <button className="btn btn-secondary btn-sm" onClick={handleExportDB} title="Exportar copia de seguridad JSON">
+        {/* Hidden File Input for Import */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          accept=".json"
+          onChange={handleImportFileChange}
+          style={{ display: 'none' }}
+        />
+
+        <button 
+          className="btn btn-secondary btn-sm" 
+          onClick={() => fileInputRef.current?.click()} 
+          title="Importar datos desde archivo JSON"
+        >
+          <Upload size={15} /> Importar JSON
+        </button>
+
+        <button 
+          className="btn btn-secondary btn-sm" 
+          onClick={handleExportDB} 
+          title="Exportar copia de seguridad JSON"
+        >
           <Download size={15} /> Exportar JSON
         </button>
 

@@ -15,7 +15,8 @@ import {
   Trash2,
   Zap,
   Tag,
-  AlignLeft
+  Maximize2,
+  MoveVertical
 } from 'lucide-react';
 
 export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) {
@@ -31,7 +32,8 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
 
   const [selectedCategory, setSelectedCategory] = useState('Todas');
   const [searchQuery, setSearchQuery] = useState('');
-  const [cardZoomSize, setCardZoomSize] = useState(300); // Slider size in px
+  const [cardZoomSize, setCardZoomSize] = useState(300); // Slider width size in px
+  const [cardHeight, setCardHeight] = useState(380); // Slider vertical height in px
   const [activeModalTemplate, setActiveModalTemplate] = useState(null);
   const [modalTab, setModalTab] = useState('preview');
   const [copiedId, setCopiedId] = useState(null);
@@ -155,11 +157,11 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
         </div>
 
         {/* Middle: Search Bar */}
-        <div style={{ position: 'relative', width: '240px' }}>
+        <div style={{ position: 'relative', width: '220px' }}>
           <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
           <input
             type="text"
-            placeholder="Buscar plantilla o descripción..."
+            placeholder="Buscar plantilla..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             style={{
@@ -174,20 +176,36 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
           />
         </div>
 
-        {/* Right: Zoom Slider & Create Template */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        {/* Right: Sliders for Width Scale AND Vertical Height */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <div className="macos-zoom-control">
             <Sliders size={14} />
-            <span>Escala:</span>
+            <span>Ancho:</span>
             <input
               type="range"
               min="240"
-              max="420"
+              max="480"
               step="10"
               value={cardZoomSize}
               onChange={e => setCardZoomSize(Number(e.target.value))}
               className="macos-zoom-slider"
               title="Ajustar ancho de tarjetas"
+            />
+          </div>
+
+          {/* NEW VERTICAL HEIGHT SLIDER */}
+          <div className="macos-zoom-control">
+            <MoveVertical size={14} style={{ color: 'var(--accent-blue)' }} />
+            <span>Alto:</span>
+            <input
+              type="range"
+              min="200"
+              max="700"
+              step="20"
+              value={cardHeight}
+              onChange={e => setCardHeight(Number(e.target.value))}
+              className="macos-zoom-slider"
+              title="Ajustar alto vertical del contenedor de correos (ver más contenido)"
             />
           </div>
 
@@ -220,8 +238,8 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
             className="template-card"
             onClick={() => setActiveModalTemplate(tmpl)}
           >
-            {/* Taller Vertical Email Browser Render Frame */}
-            <div className="template-preview-frame">
+            {/* Dynamic Vertical Height Email Browser Render Frame */}
+            <div className="template-preview-frame" style={{ height: `${cardHeight}px` }}>
               <div className="email-browser-bar">
                 <span className="dot red"></span>
                 <span className="dot yellow"></span>
@@ -233,6 +251,12 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
                   srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"/><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;margin:0;padding:12px;background:#ffffff;box-sizing:border-box;} img{max-width:100%;}</style></head><body>${tmpl.htmlBody || ''}</body></html>`}
                   title={tmpl.name}
                   className="email-mini-iframe"
+                  style={{
+                    width: '150%',
+                    height: `${cardHeight * 1.5}px`,
+                    transform: 'scale(0.667)',
+                    transformOrigin: 'top left'
+                  }}
                 />
               </div>
             </div>
