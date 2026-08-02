@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from './db/database';
+import { db, syncAugustEmailHistory } from './db/database';
 
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -14,10 +14,15 @@ import AgileWebGenerator from './components/AgileWebGenerator';
 import { X, CheckCircle2 } from 'lucide-react';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('templates'); // Default to MacOS Photos template gallery!
+  const [activeTab, setActiveTab] = useState('history'); // Set default to history so user immediately sees the newly added emails!
   const [selectedEmail, setSelectedEmail] = useState(null);
   const [notification, setNotification] = useState(null);
   const [showGlobalNewModal, setShowGlobalNewModal] = useState(false);
+
+  // Sync August emails on mount
+  useEffect(() => {
+    syncAugustEmailHistory();
+  }, []);
 
   // Live DB Queries for Counts
   const tasks = useLiveQuery(() => db.tasks.toArray(), []) || [];

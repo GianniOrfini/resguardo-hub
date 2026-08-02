@@ -3,7 +3,7 @@ import initialBackupData from './backup_data.json';
 
 export const db = new Dexie('ResguardoHubDB');
 
-// Define version 1 (matches original user schema)
+// Define version 1
 db.version(1).stores({
   templates: '++id, name, category, targetAudience, rating, createdAt, isAiGenerated',
   scheduledEmails: '++id, subject, scheduledDate, status, category, segment',
@@ -12,7 +12,7 @@ db.version(1).stores({
   webPresets: '++id, name, type, createdAt'
 });
 
-// Define version 2 (non-breaking upgrade for new categories table)
+// Define version 2
 db.version(2).stores({
   templates: '++id, name, category, targetAudience, rating, createdAt, isAiGenerated',
   categories: '++id, name',
@@ -22,34 +22,28 @@ db.version(2).stores({
   webPresets: '++id, name, type, createdAt'
 });
 
-// ZERO RISK POPULATE: 'populate' ONLY runs if the database is 100% new and empty.
-// If data already exists in the browser, populate does NOTHING.
 db.on('populate', async () => {
-  const existingCount = await db.templates.count();
-  if (existingCount > 0) {
-    console.log('Existing browser data detected. Skipping populate to protect user data.');
-    return;
-  }
-
-  console.log('Brand new database detected. Seeding fallback initial data...');
-
-  if (initialBackupData.categories?.length) {
-    await db.categories.bulkAdd(initialBackupData.categories);
-  }
-
-  if (initialBackupData.templates?.length) {
-    await db.templates.bulkAdd(initialBackupData.templates);
-  }
-
-  if (initialBackupData.scheduledEmails?.length) {
-    await db.scheduledEmails.bulkAdd(initialBackupData.scheduledEmails);
-  }
-
-  if (initialBackupData.emailHistory?.length) {
-    await db.emailHistory.bulkAdd(initialBackupData.emailHistory);
-  }
-
-  if (initialBackupData.tasks?.length) {
-    await db.tasks.bulkAdd(initialBackupData.tasks);
-  }
+  console.log('Seeding initial data...');
+  if (initialBackupData.categories?.length) await db.categories.bulkAdd(initialBackupData.categories);
+  if (initialBackupData.templates?.length) await db.templates.bulkAdd(initialBackupData.templates);
+  if (initialBackupData.scheduledEmails?.length) await db.scheduledEmails.bulkAdd(initialBackupData.scheduledEmails);
+  if (initialBackupData.emailHistory?.length) await db.emailHistory.bulkAdd(initialBackupData.emailHistory);
+  if (initialBackupData.tasks?.length) await db.tasks.bulkAdd(initialBackupData.tasks);
 });
+
+// Helper function to safely merge August 2026 email history into IndexedDB without touching existing templates or tasks
+export async function syncAugustEmailHistory() {
+  try {
+    const existingHistory = await db.emailHistory.toArray();
+    const existingSubjects = new Set(existingHistory.map(h => h.subject));
+
+    const newEntries = (initialBackupData.emailHistory || []).filter(item => !existingSubjects.has(item.subject));
+
+    if (newEntries.length > 0) {
+      await db.emailHistory.bulkAdd(newEntries);
+      console.log(`Successfully synced ${newEntries.length} new August email history items.`);
+    }
+  } catch (err) {
+    console.error('Error syncing August email history:', err);
+  }
+}
