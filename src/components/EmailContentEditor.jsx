@@ -239,8 +239,8 @@ export default function EmailContentEditor({ selectedEmail, onNotification }) {
           </div>
         </div>
 
-        {/* HTML / Body Content Editor & Renderer */}
-        <div style={{ flex: 1, minHeight: '350px', display: 'flex', flexDirection: 'column' }}>
+        {/* HTML / Body Content Editor & Sandboxed Renderer */}
+        <div style={{ flex: 1, minHeight: '380px', display: 'flex', flexDirection: 'column' }}>
           <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '6px' }}>
             Contenido HTML / Mensaje
           </label>
@@ -268,15 +268,16 @@ export default function EmailContentEditor({ selectedEmail, onNotification }) {
               style={{
                 width: '100%',
                 flex: 1,
-                padding: '20px',
                 borderRadius: '8px',
                 border: '1px solid var(--border-color)',
                 background: '#f8fafc',
-                overflowY: 'auto'
+                overflow: 'hidden'
               }}
             >
-              <div
-                dangerouslySetInnerHTML={{ __html: htmlBody || '<p style="color: #94a3b8; font-style: italic;">Sin contenido cargado. Selecciona una plantilla o escribe HTML en el editor.</p>' }}
+              <iframe
+                srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"/><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;margin:0;padding:20px;background:#ffffff;color:#111827;} img{max-width:100%;}</style></head><body>${htmlBody || '<p style="color: #94a3b8; font-style: italic;">Sin contenido cargado. Selecciona una plantilla o escribe HTML en el editor.</p>'}</body></html>`}
+                title="Preview Email Content"
+                style={{ width: '100%', height: '100%', border: 'none', background: '#ffffff' }}
               />
             </div>
           )}

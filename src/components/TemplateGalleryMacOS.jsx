@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/database';
 import { 
@@ -16,7 +16,9 @@ import {
   Zap,
   Tag,
   Maximize2,
-  MoveVertical
+  MoveVertical,
+  Edit3,
+  Save
 } from 'lucide-react';
 
 export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) {
@@ -38,6 +40,14 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
   const [modalTab, setModalTab] = useState('preview');
   const [copiedId, setCopiedId] = useState(null);
 
+  // Edit Mode state for active modal template
+  const [isEditingTemplate, setIsEditingTemplate] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editCategory, setEditCategory] = useState('');
+  const [editAudience, setEditAudience] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editSubject, setEditSubject] = useState('');
+
   // New Category inline modal/input
   const [showAddCatModal, setShowAddCatModal] = useState(false);
   const [newCatName, setNewCatName] = useState('');
@@ -50,6 +60,18 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
   const [newTmplSubject, setNewTmplSubject] = useState('');
   const [newTmplDescription, setNewTmplDescription] = useState('');
   const [newTmplBody, setNewTmplBody] = useState('');
+
+  // When activeModalTemplate changes, sync edit fields
+  useEffect(() => {
+    if (activeModalTemplate) {
+      setEditName(activeModalTemplate.name || '');
+      setEditCategory(activeModalTemplate.category || 'Cold Outreach');
+      setEditAudience(activeModalTemplate.targetAudience || '');
+      setEditDescription(activeModalTemplate.description || '');
+      setEditSubject(activeModalTemplate.subject || '');
+      setIsEditingTemplate(false);
+    }
+  }, [activeModalTemplate]);
 
   // Filter templates
   const filteredTemplates = templates.filter(tmpl => {
@@ -90,6 +112,30 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
     await db.templates.delete(id);
     setActiveModalTemplate(null);
     onNotification('Plantilla eliminada.');
+  };
+
+  const handleSaveTemplateEdits = async () => {
+    if (!activeModalTemplate?.id) return;
+
+    await db.templates.update(activeModalTemplate.id, {
+      name: editName,
+      category: editCategory,
+      targetAudience: editAudience,
+      description: editDescription,
+      subject: editSubject
+    });
+
+    setActiveModalTemplate(prev => ({
+      ...prev,
+      name: editName,
+      category: editCategory,
+      targetAudience: editAudience,
+      description: editDescription,
+      subject: editSubject
+    }));
+
+    setIsEditingTemplate(false);
+    onNotification('Plantilla y categoría actualizadas correctamente.');
   };
 
   const handleAddCategorySubmit = async (e) => {
@@ -193,7 +239,6 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
             />
           </div>
 
-          {/* NEW VERTICAL HEIGHT SLIDER */}
           <div className="macos-zoom-control">
             <MoveVertical size={14} style={{ color: 'var(--accent-blue)' }} />
             <span>Alto:</span>
@@ -295,14 +340,23 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
         <div className="modal-overlay" onClick={() => setActiveModalTemplate(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ width: '34px', height: '34px', background: '#f3e8ff', color: '#8b5cf6', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
+                <div style={{ width: '34px', height: '34px', background: '#f3e8ff', color: '#8b5cf6', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <Sparkles size={18} />
                 </div>
-                <div>
-                  <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '16px', fontWeight: '700' }}>
-                    {activeModalTemplate.name}
-                  </h3>
+                <div style={{ flex: 1 }}>
+                  {isEditingTemplate ? (
+                    <input
+                      type="text"
+                      value={editName}
+                      onChange={e => setEditName(e.target.value)}
+                      style={{ fontSize: '15px', fontWeight: '700', padding: '4px 8px', borderRadius: '6px', border: '1px solid var(--border-color)', width: '90%' }}
+                    />
+                  ) : (
+                    <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '16px', fontWeight: '700' }}>
+                      {activeModalTemplate.name}
+                    </h3>
+                  )}
                   <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                     Categoría: {activeModalTemplate.category} • Audiencia: {activeModalTemplate.targetAudience}
                   </p>
@@ -318,11 +372,67 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
             </div>
 
             <div className="modal-body">
-              {/* Description Callout */}
-              {activeModalTemplate.description && (
-                <div style={{ background: '#f8fafc', borderLeft: '4px solid var(--accent-purple)', padding: '12px 16px', borderRadius: '0 8px 8px 0', marginBottom: '16px', fontSize: '13px', color: 'var(--text-secondary)' }}>
-                  <strong style={{ color: 'var(--text-primary)' }}>Descripción / Notas:</strong> {activeModalTemplate.description}
+              {/* Category & Description Edit Panel */}
+              {isEditingTemplate ? (
+                <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', padding: '16px', borderRadius: '10px', marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: '700' }}>Categoría de la Plantilla</label>
+                      <select
+                        value={editCategory}
+                        onChange={e => setEditCategory(e.target.value)}
+                        style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '13px', marginTop: '4px' }}
+                      >
+                        {categoryNames.filter(c => c !== 'Todas').map(c => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: '700' }}>Audiencia Objetivo</label>
+                      <input
+                        type="text"
+                        value={editAudience}
+                        onChange={e => setEditAudience(e.target.value)}
+                        style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '13px', marginTop: '4px' }}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '12px', fontWeight: '700' }}>Descripción Personalizada / Notas</label>
+                    <textarea
+                      rows={2}
+                      value={editDescription}
+                      onChange={e => setEditDescription(e.target.value)}
+                      placeholder="Escribe la descripción de la plantilla..."
+                      style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '12.5px', marginTop: '4px' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '12px', fontWeight: '700' }}>Asunto</label>
+                    <input
+                      type="text"
+                      value={editSubject}
+                      onChange={e => setEditSubject(e.target.value)}
+                      style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '13px', marginTop: '4px' }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                    <button className="btn btn-secondary btn-sm" onClick={() => setIsEditingTemplate(false)}>Cancelar</button>
+                    <button className="btn btn-primary btn-sm" onClick={handleSaveTemplateEdits}>
+                      <Save size={14} /> Guardar Cambios
+                    </button>
+                  </div>
                 </div>
+              ) : (
+                activeModalTemplate.description && (
+                  <div style={{ background: '#f8fafc', borderLeft: '4px solid var(--accent-purple)', padding: '12px 16px', borderRadius: '0 8px 8px 0', marginBottom: '16px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                    <strong style={{ color: 'var(--text-primary)' }}>Descripción / Notas:</strong> {activeModalTemplate.description}
+                  </div>
+                )
               )}
 
               {/* Modal Top Toolbar */}
@@ -343,6 +453,13 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
                 </div>
 
                 <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => setIsEditingTemplate(!isEditingTemplate)}
+                  >
+                    <Edit3 size={14} /> {isEditingTemplate ? 'Ver Plantilla' : 'Editar Categoría & Descripción'}
+                  </button>
+
                   <button
                     className="btn btn-secondary btn-sm"
                     onClick={() => handleCopyCode(activeModalTemplate)}
@@ -371,16 +488,22 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
               </div>
 
               {/* Subject Bar */}
-              <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: '1px solid var(--border-color)', marginBottom: '16px' }}>
-                <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>
-                  <strong>Asunto:</strong> {activeModalTemplate.subject}
+              {!isEditingTemplate && (
+                <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: '1px solid var(--border-color)', marginBottom: '16px' }}>
+                  <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>
+                    <strong>Asunto:</strong> {activeModalTemplate.subject}
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {/* Main Content Pane */}
+              {/* Main Content Pane (SANDBOXED IFRAME TO PREVENT STYLE LEAKAGE) */}
               {modalTab === 'preview' ? (
-                <div style={{ background: '#ffffff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '24px', minHeight: '360px' }}>
-                  <div dangerouslySetInnerHTML={{ __html: activeModalTemplate.htmlBody }} />
+                <div style={{ background: '#ffffff', border: '1px solid var(--border-color)', borderRadius: '10px', minHeight: '380px', overflow: 'hidden' }}>
+                  <iframe
+                    srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"/><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;margin:0;padding:24px;background:#ffffff;color:#111827;box-sizing:border-box;} img{max-width:100%;}</style></head><body>${activeModalTemplate.htmlBody || ''}</body></html>`}
+                    title={activeModalTemplate.name}
+                    style={{ width: '100%', height: '400px', border: 'none', background: '#ffffff' }}
+                  />
                 </div>
               ) : (
                 <textarea
@@ -388,7 +511,7 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
                   value={activeModalTemplate.htmlBody}
                   style={{
                     width: '100%',
-                    height: '360px',
+                    height: '380px',
                     padding: '16px',
                     borderRadius: '10px',
                     fontFamily: 'monospace',
