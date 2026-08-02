@@ -34,7 +34,7 @@ export default function Sidebar({ activeTab, setActiveTab, counts }) {
     },
     {
       id: 'templates',
-      label: 'Plantillas IA (MacOS)',
+      label: 'Plantillas IA',
       icon: LayoutGrid,
       badge: counts.templates || 0,
       group: 'EMAIL MARKETING'
@@ -64,7 +64,7 @@ export default function Sidebar({ activeTab, setActiveTab, counts }) {
       <div>
         <div className="brand-header">
           <div className="brand-icon">
-            <Sparkles size={20} />
+            <Sparkles size={18} />
           </div>
           <div>
             <div className="brand-title">RESGUARDO</div>
@@ -85,8 +85,10 @@ export default function Sidebar({ activeTab, setActiveTab, counts }) {
                     className={`nav-item ${isActive ? 'active' : ''}`}
                     onClick={() => setActiveTab(item.id)}
                   >
-                    <Icon size={18} />
-                    <span>{item.label}</span>
+                    <Icon size={16} style={{ flexShrink: 0 }} />
+                    <span style={{ flex: 1, textAlign: 'left', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {item.label}
+                    </span>
                     {item.badge !== undefined && item.badge > 0 && (
                       <span className="nav-badge">{item.badge}</span>
                     )}
@@ -102,10 +104,10 @@ export default function Sidebar({ activeTab, setActiveTab, counts }) {
         <div className="user-card">
           <div className="user-avatar">G</div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: '13px', fontWeight: '700', truncate: true }}>Gianni</div>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Tech & Marketing Lead</div>
+            <div style={{ fontSize: '12.5px', fontWeight: '700' }}>Gianni</div>
+            <div style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>Tech & Marketing Lead</div>
           </div>
-          <Database size={15} style={{ color: 'var(--accent-green)' }} title="Base de Datos Local (IndexedDB) Activa" />
+          <Database size={14} style={{ color: 'var(--accent-green)' }} title="Base de Datos Local (IndexedDB) Activa" />
         </div>
       </div>
     </aside>

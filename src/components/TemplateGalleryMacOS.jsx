@@ -18,7 +18,8 @@ import {
   Maximize2,
   MoveVertical,
   Edit3,
-  Save
+  Save,
+  FolderMinus
 } from 'lucide-react';
 
 export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) {
@@ -48,7 +49,7 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
   const [editDescription, setEditDescription] = useState('');
   const [editSubject, setEditSubject] = useState('');
 
-  // New Category inline modal/input
+  // Category management modal
   const [showAddCatModal, setShowAddCatModal] = useState(false);
   const [newCatName, setNewCatName] = useState('');
 
@@ -149,7 +150,20 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
     }
 
     setNewCatName('');
-    setShowAddCatModal(false);
+  };
+
+  const handleDeleteCategory = async (catName) => {
+    // Find category record in db.categories if present
+    const catRecord = dbCategories.find(c => c.name === catName);
+    if (catRecord) {
+      await db.categories.delete(catRecord.id);
+    }
+    
+    // Reset selection if deleted category was active
+    if (selectedCategory === catName) {
+      setSelectedCategory('Todas');
+    }
+    onNotification(`Categoría "${catName}" eliminada.`);
   };
 
   const handleCreateTemplateSubmit = async (e) => {
@@ -196,9 +210,9 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
             className="pill-btn"
             style={{ borderStyle: 'dashed', color: 'var(--accent-blue)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
             onClick={() => setShowAddCatModal(true)}
-            title="Crear nueva categoría"
+            title="Gestionar y añadir categorías"
           >
-            <Plus size={13} /> Categoría
+            <Plus size={13} /> Categorías
           </button>
         </div>
 
@@ -541,35 +555,73 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
         </div>
       )}
 
-      {/* Modal 2: Create Custom Category */}
+      {/* Modal 2: Manage and Create Custom Categories */}
       {showAddCatModal && (
         <div className="modal-overlay" onClick={() => setShowAddCatModal(false)}>
-          <div className="modal-content" style={{ maxWidth: '420px' }} onClick={e => e.stopPropagation()}>
+          <div className="modal-content" style={{ maxWidth: '480px' }} onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '15px', fontWeight: '700' }}>
-                Crear Nueva Categoría
+                Gestionar Categorías
               </h3>
               <button onClick={() => setShowAddCatModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
                 <X size={16} />
               </button>
             </div>
-            <form onSubmit={handleAddCategorySubmit}>
-              <div className="modal-body">
-                <label style={{ fontSize: '12px', fontWeight: '700' }}>Nombre de la Categoría</label>
+            
+            <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Form to Add Category */}
+              <form onSubmit={handleAddCategorySubmit} style={{ display: 'flex', gap: '8px' }}>
                 <input
                   type="text"
                   required
-                  placeholder="Ej: Webinars, Re-engagement, Black Friday..."
+                  placeholder="Nombre de la nueva categoría..."
                   value={newCatName}
                   onChange={e => setNewCatName(e.target.value)}
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '13px', marginTop: '6px' }}
+                  style={{ flex: 1, padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '13px' }}
                 />
+                <button type="submit" className="btn btn-primary btn-sm">
+                  <Plus size={14} /> Agregar
+                </button>
+              </form>
+
+              {/* List of Existing Custom Categories to Delete */}
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)', display: 'block', marginBottom: '8px' }}>
+                  Categorías Existentes (Haz clic en el basurero para eliminar):
+                </label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '200px', overflowY: 'auto' }}>
+                  {categoryNames.filter(c => c !== 'Todas').map(cat => (
+                    <div
+                      key={cat}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '8px 12px',
+                        borderRadius: '8px',
+                        background: '#f8fafc',
+                        border: '1px solid var(--border-color)',
+                        fontSize: '13px'
+                      }}
+                    >
+                      <span style={{ fontWeight: '600' }}>{cat}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteCategory(cat)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent-red)', opacity: 0.8 }}
+                        title={`Eliminar categoría "${cat}"`}
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div style={{ padding: '14px 20px', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                <button type="button" className="btn btn-secondary btn-sm" onClick={() => setShowAddCatModal(false)}>Cancelar</button>
-                <button type="submit" className="btn btn-primary btn-sm">Guardar Categoría</button>
-              </div>
-            </form>
+            </div>
+
+            <div style={{ padding: '14px 20px', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'flex-end' }}>
+              <button type="button" className="btn btn-secondary btn-sm" onClick={() => setShowAddCatModal(false)}>Cerrar</button>
+            </div>
           </div>
         </div>
       )}
