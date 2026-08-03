@@ -240,31 +240,31 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <div className="macos-zoom-control">
             <Sliders size={14} />
-            <span>Ancho:</span>
+            <span>Ancho ({cardZoomSize}px):</span>
             <input
               type="range"
-              min="240"
-              max="480"
+              min="120"
+              max="1200"
               step="10"
               value={cardZoomSize}
               onChange={e => setCardZoomSize(Number(e.target.value))}
               className="macos-zoom-slider"
-              title="Ajustar ancho de tarjetas"
+              title="Ajustar libremente ancho de tarjetas (120px a 1200px)"
             />
           </div>
 
           <div className="macos-zoom-control">
             <MoveVertical size={14} style={{ color: 'var(--accent-blue)' }} />
-            <span>Alto:</span>
+            <span>Alto ({cardHeight}px):</span>
             <input
               type="range"
-              min="200"
-              max="700"
-              step="20"
+              min="100"
+              max="3500"
+              step="50"
               value={cardHeight}
               onChange={e => setCardHeight(Number(e.target.value))}
               className="macos-zoom-slider"
-              title="Ajustar alto vertical del contenedor de correos (ver más contenido)"
+              title="Ajustar libremente alto vertical de tarjetas (100px a 3500px)"
             />
           </div>
 
