@@ -44,10 +44,17 @@ export async function syncAugustEmailHistory() {
       console.log(`Successfully synced ${newEntries.length} new August email history items.`);
     }
 
-    // Update any existing items that don't have addedAt
+    // Update any existing items with updated htmlBody and addedAt from backup_data
     for (const item of existingHistory) {
-      if (!item.addedAt) {
-        await db.emailHistory.update(item.id, { addedAt: '2026-08-02', openRate: null, clickRate: null });
+      const match = (initialBackupData.emailHistory || []).find(b => b.subject === item.subject);
+      if (match) {
+        await db.emailHistory.update(item.id, {
+          htmlBody: match.htmlBody,
+          bodyText: match.bodyText,
+          addedAt: match.addedAt || '2026-08-02',
+          openRate: match.openRate || null,
+          clickRate: match.clickRate || null
+        });
       }
     }
   } catch (err) {
