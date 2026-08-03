@@ -13,7 +13,7 @@ import {
   MoveVertical,
   Bot,
   Grid,
-  Maximize2,
+  Code,
   UnfoldVertical
 } from 'lucide-react';
 
@@ -111,8 +111,16 @@ export default function YearlyGallery({ onNotification }) {
   const handleCopyEmail = (item) => {
     const rawText = item.bodyText || item.htmlContent || '';
     navigator.clipboard.writeText(`ASUNTO: ${item.displayTitle}\n\n${rawText}`);
-    setCopiedId(item.id || item.displayTitle);
-    onNotification(`Contenido de "${item.displayTitle}" copiado al portapapeles.`);
+    setCopiedId(`text-${item.id || item.displayTitle}`);
+    onNotification(`Texto de "${item.displayTitle}" copiado al portapapeles.`);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleCopyHtml = (item) => {
+    const htmlToCopy = item.htmlContent || item.htmlBody || '';
+    navigator.clipboard.writeText(htmlToCopy);
+    setCopiedId(`html-${item.id || item.displayTitle}`);
+    onNotification(`Código HTML de "${item.displayTitle}" copiado al portapapeles.`);
     setTimeout(() => setCopiedId(null), 2000);
   };
 
@@ -229,7 +237,7 @@ export default function YearlyGallery({ onNotification }) {
         <div style={{ display: 'flex', gap: '8px' }}>
           {autoFullHeight && (
             <div style={{ background: '#dcfce7', color: '#15803d', padding: '3px 10px', borderRadius: '12px', fontSize: '11.5px', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-              <UnfoldVertical size={13} /> Visualización 100% Completa (Sin Scroll Interno)
+              <UnfoldVertical size={13} /> Visualización 100% Completa
             </div>
           )}
           {pureMode && (
@@ -291,6 +299,38 @@ export default function YearlyGallery({ onNotification }) {
                     className="template-card"
                     onClick={() => setActiveModalEmail(item)}
                   >
+                    {/* Floating Quick Action: COPY HTML BUTTON */}
+                    <div 
+                      style={{
+                        position: 'absolute',
+                        top: pureMode ? '10px' : '44px',
+                        right: '10px',
+                        zIndex: 10,
+                        display: 'flex',
+                        gap: '6px'
+                      }}
+                      onClick={e => e.stopPropagation()}
+                    >
+                      <button
+                        className="btn btn-primary btn-sm"
+                        onClick={() => handleCopyHtml(item)}
+                        style={{
+                          fontSize: '11px',
+                          padding: '5px 12px',
+                          borderRadius: '20px',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.18)',
+                          backdropFilter: 'blur(8px)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px'
+                        }}
+                        title="Copiar código HTML completo al portapapeles"
+                      >
+                        {copiedId === `html-${item.id || item.displayTitle}` ? <Check size={12} color="#10b981" /> : <Code size={12} />}
+                        <span>{copiedId === `html-${item.id || item.displayTitle}` ? '¡HTML Copiado!' : 'Copiar HTML'}</span>
+                      </button>
+                    </div>
+
                     {/* Optional Standard Header Bar (Hidden in pureMode) */}
                     {!pureMode && (
                       <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-color)', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -302,13 +342,6 @@ export default function YearlyGallery({ onNotification }) {
                             {item.dateKey} • {item.category || item.sourceType}
                           </div>
                         </div>
-                        <button
-                          className="btn btn-secondary btn-sm"
-                          onClick={(e) => { e.stopPropagation(); handleCopyEmail(item); }}
-                          title="Copiar contenido"
-                        >
-                          {copiedId === (item.id || item.displayTitle) ? <Check size={13} color="var(--accent-green)" /> : <Copy size={13} />}
-                        </button>
                       </div>
                     )}
 
@@ -358,9 +391,15 @@ export default function YearlyGallery({ onNotification }) {
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <button className="btn btn-secondary btn-sm" onClick={() => handleCopyEmail(activeModalEmail)}>
-                  <Copy size={14} /> Copiar Email
+                <button className="btn btn-primary btn-sm" onClick={() => handleCopyHtml(activeModalEmail)}>
+                  {copiedId === `html-${activeModalEmail.id || activeModalEmail.displayTitle}` ? <Check size={14} color="#10b981" /> : <Code size={14} />}
+                  {copiedId === `html-${activeModalEmail.id || activeModalEmail.displayTitle}` ? '¡HTML Copiado!' : 'Copiar Código HTML'}
                 </button>
+
+                <button className="btn btn-secondary btn-sm" onClick={() => handleCopyEmail(activeModalEmail)}>
+                  <Copy size={14} /> Copiar Texto
+                </button>
+
                 <button onClick={() => setActiveModalEmail(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
                   <X size={20} />
                 </button>
