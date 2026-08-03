@@ -10,7 +10,7 @@ export default function Header({ activeTab, onOpenNewModal, onNotification }) {
       case 'tasks': return { title: 'Centralizador de Tareas & Operaciones', subtitle: 'Optimización de flujo de trabajo mensual en bloque para Resguardo' };
       case 'calendar': return { title: 'Calendario de Emails Programados', subtitle: 'Planificación visual de campañas y secuenciación en GoHighLevel' };
       case 'content': return { title: 'Gestor & Editor de Contenido de Email', subtitle: 'Redacción, previsualización y maquetación fina de correos' };
-      case 'templates': return { title: 'Galería de Plantillas IA (Estilo MacOS)', subtitle: 'Catálogo dinámico de plantillas generadas por IA para variación rápida' };
+      case 'templates': return { title: 'Galería de Plantillas IA', subtitle: 'Catálogo dinámico de plantillas generadas por IA para variación rápida' };
       case 'history': return { title: 'Historial de Correos & Dataset para IA', subtitle: 'Registro histórico y exportador de datos para entrenamiento de IA' };
       case 'agileweb': return { title: 'Generador Web Ágil & Satélites', subtitle: 'Construcción exprés de landing pages y sitios de captura' };
       default: return { title: 'Resguardo Hub', subtitle: 'Plataforma Operativa' };
@@ -67,7 +67,6 @@ export default function Header({ activeTab, onOpenNewModal, onNotification }) {
         let importedTasksCount = 0;
 
         if (Array.isArray(data.templates) && data.templates.length > 0) {
-          // Remove primary keys if auto-incrementing conflicts
           const cleanTemplates = data.templates.map(({ id, ...rest }) => rest);
           await db.templates.bulkAdd(cleanTemplates);
           importedTemplatesCount = cleanTemplates.length;
@@ -112,8 +111,8 @@ export default function Header({ activeTab, onOpenNewModal, onNotification }) {
       </div>
 
       <div className="header-actions">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--accent-green)', fontWeight: '600', padding: '4px 10px', background: '#dcfce7', borderRadius: '20px' }}>
-          <ShieldCheck size={14} /> Local IndexedDB (No Supabase)
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--accent-green)', fontWeight: '600', padding: '4px 12px', background: '#dcfce7', borderRadius: '20px' }}>
+          <ShieldCheck size={14} /> Base de Datos Activa (Local)
         </div>
 
         {/* Hidden File Input for Import */}
