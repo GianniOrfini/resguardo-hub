@@ -48,6 +48,7 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
   const [editAudience, setEditAudience] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editSubject, setEditSubject] = useState('');
+  const [editHtmlBody, setEditHtmlBody] = useState('');
 
   // Category management modal
   const [showAddCatModal, setShowAddCatModal] = useState(false);
@@ -70,6 +71,7 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
       setEditAudience(activeModalTemplate.targetAudience || '');
       setEditDescription(activeModalTemplate.description || '');
       setEditSubject(activeModalTemplate.subject || '');
+      setEditHtmlBody(activeModalTemplate.htmlBody || '');
       setIsEditingTemplate(false);
     }
   }, [activeModalTemplate]);
@@ -137,6 +139,21 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
 
     setIsEditingTemplate(false);
     onNotification('Plantilla y categoría actualizadas correctamente.');
+  };
+
+  const handleSaveHtmlBody = async () => {
+    if (!activeModalTemplate?.id) return;
+
+    await db.templates.update(activeModalTemplate.id, {
+      htmlBody: editHtmlBody
+    });
+
+    setActiveModalTemplate(prev => ({
+      ...prev,
+      htmlBody: editHtmlBody
+    }));
+
+    onNotification(`Código HTML de "${activeModalTemplate.name}" guardado exitosamente.`);
   };
 
   const handleAddCategorySubmit = async (e) => {
@@ -520,21 +537,33 @@ export default function TemplateGalleryMacOS({ onUseTemplate, onNotification }) 
                   />
                 </div>
               ) : (
-                <textarea
-                  readOnly
-                  value={activeModalTemplate.htmlBody}
-                  style={{
-                    width: '100%',
-                    height: '380px',
-                    padding: '16px',
-                    borderRadius: '10px',
-                    fontFamily: 'monospace',
-                    fontSize: '12px',
-                    background: '#0f172a',
-                    color: '#f8fafc',
-                    border: '1px solid var(--border-color)'
-                  }}
-                />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#0f172a', padding: '10px 16px', borderRadius: '10px 10px 0 0', color: '#94a3b8', fontSize: '12px' }}>
+                    <span style={{ fontWeight: '700', color: '#f8fafc' }}>Editor de Código HTML (Edición Directa)</span>
+                    <button className="btn btn-primary btn-sm" onClick={handleSaveHtmlBody}>
+                      <Save size={14} /> Guardar Código HTML
+                    </button>
+                  </div>
+                  <textarea
+                    value={editHtmlBody}
+                    onChange={e => setEditHtmlBody(e.target.value)}
+                    placeholder="Escribe o pega aquí el código HTML de la plantilla..."
+                    style={{
+                      width: '100%',
+                      height: '380px',
+                      padding: '16px',
+                      borderRadius: '0 0 10px 10px',
+                      fontFamily: 'monospace',
+                      fontSize: '12.5px',
+                      lineHeight: '1.5',
+                      background: '#0f172a',
+                      color: '#38bdf8',
+                      border: '1px solid var(--border-color)',
+                      outline: 'none',
+                      resize: 'vertical'
+                    }}
+                  />
+                </div>
               )}
             </div>
 
