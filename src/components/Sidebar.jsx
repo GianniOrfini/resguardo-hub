@@ -5,6 +5,7 @@ import {
   Mail, 
   LayoutGrid, 
   History, 
+  CalendarRange,
   Globe, 
   Sparkles,
   Database
@@ -24,6 +25,12 @@ export default function Sidebar({ activeTab, setActiveTab, counts }) {
       label: 'Calendario de Emails',
       icon: Calendar,
       badge: counts.scheduled || 0,
+      group: 'EMAIL MARKETING'
+    },
+    {
+      id: 'yearly',
+      label: 'Galería por Año',
+      icon: CalendarRange,
       group: 'EMAIL MARKETING'
     },
     {

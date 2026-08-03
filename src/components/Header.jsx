@@ -9,6 +9,7 @@ export default function Header({ activeTab, onOpenNewModal, onNotification }) {
     switch (activeTab) {
       case 'tasks': return { title: 'Centralizador de Tareas & Operaciones', subtitle: 'Optimización de flujo de trabajo mensual en bloque para Resguardo' };
       case 'calendar': return { title: 'Calendario de Emails Programados', subtitle: 'Planificación visual de campañas y secuenciación en GoHighLevel' };
+      case 'yearly': return { title: 'Galería Anual de Emails & Supervisión', subtitle: 'Muros de correos desplegados completos agrupados por año y mes sin distracciones' };
       case 'content': return { title: 'Gestor & Editor de Contenido de Email', subtitle: 'Redacción, previsualización y maquetación fina de correos' };
       case 'templates': return { title: 'Galería de Plantillas IA', subtitle: 'Catálogo dinámico de plantillas generadas por IA para variación rápida' };
       case 'history': return { title: 'Historial de Correos & Dataset para IA', subtitle: 'Registro histórico y exportador de datos para entrenamiento de IA' };
@@ -64,7 +65,6 @@ export default function Header({ activeTab, onOpenNewModal, onNotification }) {
         const data = JSON.parse(event.target.result);
         
         let importedTemplatesCount = 0;
-        let importedTasksCount = 0;
 
         if (Array.isArray(data.templates) && data.templates.length > 0) {
           const cleanTemplates = data.templates.map(({ id, ...rest }) => rest);
@@ -90,7 +90,6 @@ export default function Header({ activeTab, onOpenNewModal, onNotification }) {
         if (Array.isArray(data.tasks) && data.tasks.length > 0) {
           const cleanTasks = data.tasks.map(({ id, ...rest }) => rest);
           await db.tasks.bulkAdd(cleanTasks);
-          importedTasksCount = cleanTasks.length;
         }
 
         onNotification(`Importación completada: ${importedTemplatesCount} plantillas y datos cargados.`);
@@ -100,7 +99,7 @@ export default function Header({ activeTab, onOpenNewModal, onNotification }) {
       }
     };
     reader.readAsText(file);
-    e.target.value = ''; // reset file input
+    e.target.value = '';
   };
 
   return (

@@ -9,12 +9,13 @@ import EmailCalendar from './components/EmailCalendar';
 import EmailContentEditor from './components/EmailContentEditor';
 import TemplateGalleryMacOS from './components/TemplateGalleryMacOS';
 import EmailHistoryAI from './components/EmailHistoryAI';
+import YearlyGallery from './components/YearlyGallery';
 import AgileWebGenerator from './components/AgileWebGenerator';
 
 import { X, CheckCircle2 } from 'lucide-react';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('history'); // Set default to history so user immediately sees the newly added emails!
+  const [activeTab, setActiveTab] = useState('yearly'); // Default to Yearly Gallery so user sees the new annual supervision wall!
   const [selectedEmail, setSelectedEmail] = useState(null);
   const [notification, setNotification] = useState(null);
   const [showGlobalNewModal, setShowGlobalNewModal] = useState(false);
@@ -114,6 +115,10 @@ export default function App() {
               onSelectEmail={handleSelectEmail}
               onNotification={showToast}
             />
+          )}
+
+          {activeTab === 'yearly' && (
+            <YearlyGallery onNotification={showToast} />
           )}
 
           {activeTab === 'content' && (
