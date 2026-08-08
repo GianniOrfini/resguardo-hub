@@ -12,8 +12,8 @@ db.version(1).stores({
   webPresets: '++id, name, type, createdAt'
 });
 
-// Define version 3 for Encyclopedia and API Settings
-db.version(3).stores({
+// Define version 4 for Websites Gallery and 3-Tier Enciclopedia UI References
+db.version(4).stores({
   templates: '++id, name, category, targetAudience, rating, createdAt, isAiGenerated',
   categories: '++id, name',
   scheduledEmails: '++id, subject, scheduledDate, status, category, segment',
@@ -23,7 +23,9 @@ db.version(3).stores({
   encyclopediaProducts: '++id, name, category, priceRange, productionTime, specs',
   encyclopediaPersonas: '++id, title, industry, location, painPoints, buyingTriggers',
   encyclopediaBrandVoice: '++id, phrase, category, type, recommendation',
-  apiSettings: 'key, value'
+  apiSettings: 'key, value',
+  websites: '++id, name, clientName, status, createdAt, updatedAt',
+  uiReferences: '++id, title, level, category, vibeTag'
 });
 
 db.on('populate', async () => {
@@ -111,6 +113,49 @@ export async function seedEncyclopediaData() {
         { phrase: 'Soluciones llave en mano de producción e instalación', category: 'Servicio', type: 'Approved', recommendation: 'Destaca que Resguardo hace todo el trabajo.' },
         { phrase: 'Synergy, Game-Changer, Next-Gen, Revolutionary', category: 'AI Slop', type: 'Forbidden', recommendation: 'Prohibido usar palabras cliché vacías de la IA.' },
         { phrase: 'Impresión solvente 1440dpi en sustrato sintético', category: 'Técnico', type: 'Forbidden', recommendation: 'Sustituir por el resultado comercial para el cliente.' }
+      ]);
+    }
+
+    // Seed Initial Websites Gallery
+    const webCount = await db.websites.count();
+    if (webCount === 0) {
+      await db.websites.bulkAdd([
+        {
+          name: 'El Sol Grill - Renovación Fachada',
+          clientName: 'El Sol Grill MD',
+          status: 'Publicado',
+          createdAt: '2026-08-01',
+          updatedAt: '2026-08-05',
+          vibe: 'Coda Monocromático'
+        },
+        {
+          name: 'Apex Roofing - Rotulación Flota',
+          clientName: 'Apex Roofing MD',
+          status: 'En Revisión',
+          createdAt: '2026-08-03',
+          updatedAt: '2026-08-06',
+          vibe: 'Dark Industrial'
+        }
+      ]);
+    }
+
+    // Seed 3-Tier UI References (Pages, Sections, Components)
+    const refCount = await db.uiReferences.count();
+    if (refCount === 0) {
+      await db.uiReferences.bulkAdd([
+        // Level 1: Full Pages
+        { title: 'Linear Minimal SaaS Landing', level: 'full_page', category: 'B2B SaaS', vibeTag: 'Linear-minimal', description: 'Layout ultra-limpio con bordes sutiles, tipografía condensada y contraste extremo.' },
+        { title: 'Apple High-Ticket Product Showcase', level: 'full_page', category: 'Premium Consumer', vibeTag: 'Apple-clean', description: 'Espaciado generoso, imágenes hero gigantes y degradados radiales suaves.' },
+        { title: 'Industrial Dark Tech Wrap Studio', level: 'full_page', category: 'Automotive & Trades', vibeTag: 'Dark tech', description: 'Fondo oscuro #090d16, neón azul cian y tarjetas bento integradas.' },
+
+        // Level 2: Sections
+        { title: 'CleanHero con Badge de Garantía 3M', level: 'section', category: 'Heroes', vibeTag: 'Apple-clean', description: 'Hero centrado con badge de confianza arriba y CTA contrastado.' },
+        { title: 'Bento Grid de Materiales & Tiempos', level: 'section', category: 'Bentos', vibeTag: 'Linear-minimal', description: 'Grilla Bento 4x4 para métricas de durabilidad y garantía.' },
+        { title: 'Lead Capture Form GHL Integrado', level: 'section', category: 'Forms', vibeTag: 'Corporate B2B', description: 'Formulario de cotización en tarjeta inset con selector de tipo de proyecto.' },
+
+        // Level 3: Components
+        { title: 'Card Inset Stroke 1.5px Coda', level: 'component', category: 'Cards', vibeTag: 'Coda-monochrome', description: 'Borde inset de 1.5px sin sombras pesadas.' },
+        { title: 'Badge Verificado Verde Esmeralda', level: 'component', category: 'Badges', vibeTag: 'Linear-minimal', description: 'Micro-badge con icono esmeralda de verificación.' }
       ]);
     }
   } catch (err) {
