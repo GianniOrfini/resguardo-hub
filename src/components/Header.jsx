@@ -8,6 +8,7 @@ export default function Header({ activeTab, onOpenNewModal, onNotification }) {
   const getTabInfo = () => {
     switch (activeTab) {
       case 'tasks': return { title: 'Centralizador de Tareas & Operaciones', subtitle: 'Optimización de flujo de trabajo mensual en bloque para Resguardo' };
+      case 'encyclopedia': return { title: 'Enciclopedia & ADN de Marca Resguardo', subtitle: 'Catálogo de productos, buyer personas de Maryland y diccionario de voz desterrando el AI Slop' };
       case 'calendar': return { title: 'Calendario de Emails Programados', subtitle: 'Planificación visual de campañas y secuenciación en GoHighLevel' };
       case 'yearly': return { title: 'Galería Anual de Emails & Supervisión', subtitle: 'Muros de correos desplegados completos agrupados por año y mes sin distracciones' };
       case 'content': return { title: 'Gestor & Editor de Contenido de Email', subtitle: 'Redacción, previsualización y maquetación fina de correos' };
@@ -30,7 +31,7 @@ export default function Header({ activeTab, onOpenNewModal, onNotification }) {
       const tasks = await db.tasks.toArray();
 
       const exportData = {
-        version: 2,
+        version: 3,
         exportedAt: new Date().toISOString(),
         categories,
         templates,

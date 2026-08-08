@@ -8,7 +8,8 @@ import {
   CalendarRange,
   Globe, 
   Sparkles,
-  Database
+  Database,
+  BookOpen
 } from 'lucide-react';
 
 export default function Sidebar({ activeTab, setActiveTab, counts }) {
@@ -19,6 +20,18 @@ export default function Sidebar({ activeTab, setActiveTab, counts }) {
       icon: CheckSquare,
       badge: counts.pendingTasks || 0,
       group: 'PRODUCTIVIDAD'
+    },
+    {
+      id: 'encyclopedia',
+      label: 'Enciclopedia & ADN',
+      icon: BookOpen,
+      group: 'BASE DE CONOCIMIENTO'
+    },
+    {
+      id: 'agileweb',
+      label: 'Generador Web Ágil',
+      icon: Globe,
+      group: 'GENERADOR WEB'
     },
     {
       id: 'calendar',
@@ -51,12 +64,6 @@ export default function Sidebar({ activeTab, setActiveTab, counts }) {
       label: 'Historial & Entrenador IA',
       icon: History,
       group: 'EMAIL MARKETING'
-    },
-    {
-      id: 'agileweb',
-      label: 'Generador Web Ágil',
-      icon: Globe,
-      group: 'HERRAMIENTAS FUTURAS'
     }
   ];
 

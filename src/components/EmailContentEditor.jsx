@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/database';
-import { Save, Eye, Code, Send, Check, Sparkles, AlertCircle } from 'lucide-react';
+import { analyzeDeliverability, transformToB2BVariants } from '../utils/deliverabilityChecker';
+import DNSStatusModal from './DNSStatusModal';
+import { Save, Eye, Code, Sparkles, ShieldCheck, AlertTriangle, CheckCircle, RefreshCw, Wand2, HelpCircle } from 'lucide-react';
 
 export default function EmailContentEditor({ selectedEmail, onNotification }) {
   const scheduledEmails = useLiveQuery(() => db.scheduledEmails.toArray(), []) || [];
@@ -16,6 +18,11 @@ export default function EmailContentEditor({ selectedEmail, onNotification }) {
   const [scheduledDate, setScheduledDate] = useState('');
   const [htmlBody, setHtmlBody] = useState('');
   const [viewMode, setViewMode] = useState('preview'); // 'preview' or 'code'
+
+  // Modals & B2B assistant state
+  const [showDNSModal, setShowDNSModal] = useState(false);
+  const [showB2BModal, setShowB2BModal] = useState(false);
+  const [b2bVariants, setB2bVariants] = useState(null);
 
   useEffect(() => {
     if (selectedEmail) {
@@ -87,13 +94,44 @@ export default function EmailContentEditor({ selectedEmail, onNotification }) {
     }
   };
 
+  // Real-time deliverability evaluation
+  const audit = analyzeDeliverability({ subject, preheader, content: htmlBody });
+
+  const handleGenerateB2BVariants = () => {
+    const variants = transformToB2BVariants({ subject, content: htmlBody });
+    setB2bVariants(variants);
+    setShowB2BModal(true);
+  };
+
+  const handleApplyVariant = (variant) => {
+    setSubject(variant.subject);
+    setPreheader(variant.preheader);
+    setHtmlBody(variant.content);
+    setShowB2BModal(false);
+    onNotification(`Variante "${variant.name}" aplicada al editor.`);
+  };
+
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '20px' }}>
       {/* Left List of Scheduled/Draft Emails */}
-      <div style={{ background: '#ffffff', borderRadius: '14px', border: '1px solid var(--border-color)', padding: '16px', height: 'calc(100vh - 120px)', overflowY: 'auto' }}>
-        <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '14px', fontWeight: '700', marginBottom: '12px' }}>
-          Lista de Correos
-        </h3>
+      <div style={{ background: '#ffffff', borderRadius: '14px', border: '1.5px inset var(--border-color)', padding: '16px', height: 'calc(100vh - 120px)', overflowY: 'auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+          <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '14px', fontWeight: '700' }}>
+            Lista de Correos
+          </h3>
+          <button 
+            className="btn btn-xs btn-secondary"
+            onClick={() => {
+              setActiveEmailId(null);
+              setSubject('Nueva Campaña B2B Resguardo');
+              setPreheader('Presencia visual de alto nivel para tu comercio');
+              setCategory('Cold Outreach');
+              setHtmlBody('<p>Hola, te escribimos de Resguardo Designs...</p>');
+            }}
+          >
+            + Nuevo
+          </button>
+        </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {scheduledEmails.map(e => (
@@ -104,14 +142,14 @@ export default function EmailContentEditor({ selectedEmail, onNotification }) {
                 padding: '12px',
                 borderRadius: '8px',
                 border: '1px solid',
-                borderColor: activeEmailId === e.id ? 'var(--accent-primary)' : 'var(--border-color)',
+                borderColor: activeEmailId === e.id ? 'var(--text-primary)' : 'var(--border-color)',
                 backgroundColor: activeEmailId === e.id ? '#f1f5f9' : '#ffffff',
                 cursor: 'pointer',
                 transition: 'var(--transition-fast)'
               }}
             >
               <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '4px' }}>
-                {e.subject}
+                {e.subject || 'Sin asunto'}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)' }}>
                 <span>{e.category}</span>
@@ -125,7 +163,54 @@ export default function EmailContentEditor({ selectedEmail, onNotification }) {
       </div>
 
       {/* Main Editor Pane */}
-      <div style={{ background: '#ffffff', borderRadius: '14px', border: '1px solid var(--border-color)', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div style={{ background: '#ffffff', borderRadius: '14px', border: '1.5px inset var(--border-color)', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        
+        {/* Anti-Spam Gauge & DNS Header Bar */}
+        <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '18px', fontWeight: '800', color: audit.riskColor }}>
+                {100 - audit.spamScore}%
+              </div>
+              <div style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                Entregabilidad
+              </div>
+            </div>
+
+            <div style={{ height: '32px', width: '1px', background: 'var(--border-color)' }} />
+
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '13px', fontWeight: '700' }}>Riesgo de Spam:</span>
+                <span style={{ fontSize: '12px', fontWeight: '700', color: audit.riskColor }}>{audit.riskLevel}</span>
+              </div>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                {audit.detectedTriggers.length > 0 
+                  ? `Palabras riesgocas: ${audit.detectedTriggers.map(t => `"${t.word}"`).join(', ')}`
+                  : audit.suggestions[0]}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button 
+              className="btn btn-secondary btn-sm"
+              onClick={handleGenerateB2BVariants}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <Wand2 size={14} color="#8b5cf6" /> Convertir a Tono B2B (3 Variantes)
+            </button>
+
+            <button 
+              className="btn btn-secondary btn-sm"
+              onClick={() => setShowDNSModal(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <ShieldCheck size={14} color="#16a34a" /> Estado DNS Domain
+            </button>
+          </div>
+        </div>
+
         {/* Actions Bar */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '14px' }}>
           <div style={{ display: 'flex', gap: '8px' }}>
@@ -283,6 +368,56 @@ export default function EmailContentEditor({ selectedEmail, onNotification }) {
           )}
         </div>
       </div>
+
+      {/* DNS Audit Modal */}
+      {showDNSModal && (
+        <DNSStatusModal 
+          onClose={() => setShowDNSModal(false)}
+          onNotification={onNotification}
+        />
+      )}
+
+      {/* B2B Copy Generator Modal */}
+      {showB2BModal && b2bVariants && (
+        <div className="modal-overlay" onClick={() => setShowB2BModal(false)}>
+          <div className="modal-content" style={{ maxWidth: '850px', width: '90%' }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '18px', fontWeight: '700' }}>
+                Asistente de Tono B2B (3 Variantes Anti-Técnicas)
+              </h3>
+              <button onClick={() => setShowB2BModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                ✕
+              </button>
+            </div>
+
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px' }}>
+              Se transformaron los detalles técnicos en copys enfocados en crecimiento comercial, ROI y captación de clientes locales en Maryland.
+            </p>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '14px', maxHeight: '60vh', overflowY: 'auto' }}>
+              {Object.values(b2bVariants).map((variant, i) => (
+                <div key={i} style={{ border: '1px solid var(--border-color)', borderRadius: '10px', padding: '14px', background: '#f8fafc', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <div>
+                    <h4 style={{ fontSize: '13px', fontWeight: '700', marginBottom: '8px' }}>{variant.name}</h4>
+                    <div style={{ fontSize: '12px', fontWeight: '600', marginBottom: '6px' }}>
+                      Asunto: <span style={{ color: 'var(--text-muted)' }}>{variant.subject}</span>
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '12px' }}>
+                      Preheader: {variant.preheader}
+                    </div>
+                  </div>
+                  <button 
+                    className="btn btn-primary btn-sm"
+                    onClick={() => handleApplyVariant(variant)}
+                  >
+                    Usar Esta Variante
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -11,16 +11,17 @@ import TemplateGalleryMacOS from './components/TemplateGalleryMacOS';
 import EmailHistoryAI from './components/EmailHistoryAI';
 import YearlyGallery from './components/YearlyGallery';
 import AgileWebGenerator from './components/AgileWebGenerator';
+import ResguardoEncyclopedia from './components/ResguardoEncyclopedia';
 
 import { X, CheckCircle2 } from 'lucide-react';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('yearly'); // Default to Yearly Gallery so user sees the new annual supervision wall!
+  const [activeTab, setActiveTab] = useState('yearly');
   const [selectedEmail, setSelectedEmail] = useState(null);
   const [notification, setNotification] = useState(null);
   const [showGlobalNewModal, setShowGlobalNewModal] = useState(false);
 
-  // Sync August emails on mount
+  // Sync August emails and encyclopedia on mount
   useEffect(() => {
     syncAugustEmailHistory();
   }, []);
@@ -108,6 +109,10 @@ export default function App() {
         <main className="content-body">
           {activeTab === 'tasks' && (
             <TaskCentralizer onNotification={showToast} />
+          )}
+
+          {activeTab === 'encyclopedia' && (
+            <ResguardoEncyclopedia onNotification={showToast} />
           )}
 
           {activeTab === 'calendar' && (
